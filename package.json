@@ -1,0 +1,46 @@
+{
+  "name": "vue3-tree-shaking",
+  "version": "1.0.0",
+  "type": "module",
+  "author": "gang.dai",
+  "description": "tree shaking vue3 sfc code",
+  "keywords": [
+    "vue3",
+    "tree shaking"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.umd.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js",
+    "require": "./dist/index.umd.cjs"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && tsc"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__standalone": "^7.1.7",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.10"
+  },
+  "dependencies": {
+    "@babel/core": "^7.22.5",
+    "@babel/generator": "^7.22.5",
+    "@babel/parser": "^7.22.5",
+    "@babel/preset-env": "^7.23.8",
+    "@babel/standalone": "^7.25.3",
+    "@babel/traverse": "^7.22.5",
+    "@babel/types": "^7.22.5",
+    "@vue/compiler-core": "^3.3.4",
+    "@vue/compiler-sfc": "^3.3.4",
+    "acorn": "^8.9.0",
+    "acorn-walk": "^8.2.0",
+    "less": "^4.2.0"
+  }
+}
