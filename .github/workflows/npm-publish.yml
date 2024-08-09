@@ -28,6 +28,12 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org/
       - run: npm ci
+      
+      - name: Configure Git
+        run: |
+          git config --global user.email "1210242662@qq.com"
+          git config --global user.name "dai gang"
+
       # Install npm versioning tool
       - run: npm install -g npm-version
       # Bump version
