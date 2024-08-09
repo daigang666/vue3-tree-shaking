@@ -1,6 +1,6 @@
 {
   "name": "vue3-tree-shaking",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "author": "gang.dai",
   "description": "tree shaking vue3 sfc code",
