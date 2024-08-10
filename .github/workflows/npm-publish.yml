@@ -27,7 +27,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org/
       - run: npm ci
-      - run: npm build
+      - run: npm run build
 
       # Install npm versioning tool
       - run: npm install -g npm-version
