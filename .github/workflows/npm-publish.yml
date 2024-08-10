@@ -30,11 +30,11 @@ jobs:
       - run: npm run build
 
       # Install npm versioning tool
-      - run: npm install -g npm-version
-      - run: git config --global user.email "1210242662@qq.com"
-      - run: git config --global user.name "dai gang"
-      # Bump version
-      - run: npm version patch
+      # - run: npm install -g npm-version
+      # - run: git config --global user.email "1210242662@qq.com"
+      # - run: git config --global user.name "dai gang"
+      # # Bump version
+      # - run: npm version patch
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
