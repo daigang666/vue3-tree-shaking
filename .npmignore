@@ -1,0 +1,16 @@
+# 源码和配置
+lib/
+src/
+tests/
+.plans/
+.github/
+CLAUDE.md
+tsconfig.json
+vite.config.ts
+index.html
+
+# 开发文件
+*.log
+.DS_Store
+.vscode/
+.idea/
