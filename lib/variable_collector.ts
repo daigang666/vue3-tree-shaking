@@ -1,64 +1,55 @@
 import { parse } from "acorn";
 import { simple } from "acorn-walk";
-import { NodeTypes } from "@vue/compiler-core";
+import { ElementTypes, NodeTypes } from "@vue/compiler-core";
 import type { SimpleExpressionNode, ExpressionNode, TemplateChildNode, RootNode } from "@vue/compiler-core";
-
-// const NodeTypes = {
-//   ROOT: 0,
-//   ELEMENT: 1,
-//   TEXT: 2,
-//   COMMENT: 3,
-//   SIMPLE_EXPRESSION: 4,
-//   INTERPOLATION: 5,
-//   ATTRIBUTE: 6,
-//   DIRECTIVE: 7,
-//   COMPOUND_EXPRESSION: 8,
-//   IF: 9,
-//   IF_BRANCH: 10,
-//   FOR: 11,
-//   TEXT_CALL: 12,
-//   VNODE_CALL: 13,
-//   JS_CALL_EXPRESSION: 14,
-//   JS_OBJECT_EXPRESSION: 15,
-//   JS_PROPERTY: 16,
-//   JS_ARRAY_EXPRESSION: 17,
-//   JS_FUNCTION_EXPRESSION: 18,
-//   JS_CONDITIONAL_EXPRESSION: 19,
-//   JS_CACHE_EXPRESSION: 20,
-//   JS_BLOCK_STATEMENT: 21,
-//   JS_TEMPLATE_LITERAL: 22,
-//   JS_IF_STATEMENT: 23,
-//   JS_ASSIGNMENT_EXPRESSION: 24,
-//   JS_SEQUENCE_EXPRESSION: 25,
-//   JS_RETURN_STATEMENT: 26,
-// };
 
 function isSimpleExpressionNode(node: ExpressionNode): node is SimpleExpressionNode {
   return node.type === NodeTypes.SIMPLE_EXPRESSION;
 }
 
+// 将 kebab-case 转为 PascalCase（如 my-component → MyComponent）
+function toPascalCase(str: string): string {
+  return str
+    .split("-")
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join("");
+}
+
 export function createVariableCollector() {
   const expressions = new Set();
   const localScopeIdentifier = new Set();
+  const componentTags = new Set<string>();
 
   function collect(node: TemplateChildNode | RootNode | SimpleExpressionNode) {
     // 处理 ELEMENT 类型的节点，即普通 HTML 元素或 Vue 组件
     if (node.type === NodeTypes.ELEMENT) {
+      // 收集组件标签名（非原生 HTML/SVG 标签视为组件）
+      if (node.tagType === ElementTypes.COMPONENT) {
+        componentTags.add(node.tag);
+      }
+
       // 遍历元素上定义的所有属性、指令和事件
       node.props.forEach((prop) => {
         // 如果是指令且具有表达式（例如 v-bind:style、v-on:click 等），则递归地搜集变量 剔除 v-for 指令是因为会把"(item, index) in obj"整段收集
         if (prop.type === NodeTypes.DIRECTIVE && prop.exp && prop.name !== "for") {
+          // 处理 v-slot 作用域变量
+          if (prop.name === "slot" && prop.exp) {
+            const slotParams = prop.exp as SimpleExpressionNode;
+            if (slotParams.content) {
+              extractIdentifiers(slotParams.content).forEach((v) => localScopeIdentifier.add(v));
+            }
+            return;
+          }
           collect(prop.exp);
         }
 
         // 处理 v-for 指令
         if (prop.type === NodeTypes.DIRECTIVE && prop.name === "for" && prop.forParseResult) {
-          // 从解析结果中获取源数据、值别名和键别名
-          const { source, value, key } = prop.forParseResult;
-          // 收集源数据、值别名和键别名
+          const { source, value, key, index } = prop.forParseResult;
           collect(source);
           if (value && isSimpleExpressionNode(value)) localScopeIdentifier.add(value.content);
           if (key && isSimpleExpressionNode(key)) localScopeIdentifier.add(key.content);
+          if (index && isSimpleExpressionNode(index)) localScopeIdentifier.add(index.content);
         }
       });
     }
@@ -93,7 +84,21 @@ export function createVariableCollector() {
         }
         // 拼接表达式再解析，是为了处理如：person.age 获取得到person
         const { variables } = parseExpression(`const __mei_yong_de_ = ${item}`);
-        variables.forEach(variableSet.add.bind(variableSet));
+        variables.forEach((v) => {
+          // 解析后的变量也需要检查是否是局部变量
+          if (!localScopeIdentifier.has(v)) {
+            variableSet.add(v);
+          }
+        });
+      });
+      // 将组件标签名映射为 PascalCase 并加入变量集合
+      componentTags.forEach((tag) => {
+        // PascalCase 标签直接加入
+        variableSet.add(tag);
+        // kebab-case 标签转为 PascalCase
+        if (tag.includes("-")) {
+          variableSet.add(toPascalCase(tag));
+        }
       });
       return variableSet;
     },
@@ -124,4 +129,11 @@ function parseExpression(expression: string) {
     variables: Array.from<string>(variables),
     functions: Array.from(functions),
   };
+}
+
+// 从解构模式字符串中提取所有标识符（如 "{ item, index }" → ["item", "index"]）
+function extractIdentifiers(pattern: string): string[] {
+  // 匹配 JS 标识符，排除解构语法字符
+  const matches = pattern.match(/[a-zA-Z_$][a-zA-Z0-9_$]*/g);
+  return matches || [];
 }
