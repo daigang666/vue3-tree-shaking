@@ -2,7 +2,7 @@
   "name": "vue3-tree-shaking",
   "version": "1.1.0",
   "type": "module",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "author": "gang.dai",
   "description": "Tree shaking for Vue 3 SFC - remove unused imports, variables and functions from <script setup>",
   "repository": {
