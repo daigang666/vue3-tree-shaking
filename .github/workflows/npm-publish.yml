@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   test:
@@ -31,9 +32,7 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: npm ci
       - run: npm run build
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --provenance --access public
 
   github-release:
     needs: publish-npm
@@ -43,17 +42,13 @@ jobs:
         with:
           fetch-depth: 0
       - name: Generate Release Notes
-        id: notes
         run: |
-          # 获取上一个 tag
           PREV_TAG=$(git tag --sort=-v:refname | sed -n '2p')
           if [ -z "$PREV_TAG" ]; then
-            COMMITS=$(git log --pretty=format:"- %s" HEAD)
+            git log --pretty=format:"- %s" HEAD > /tmp/release-notes.txt
           else
-            COMMITS=$(git log --pretty=format:"- %s" ${PREV_TAG}..HEAD)
+            git log --pretty=format:"- %s" ${PREV_TAG}..HEAD > /tmp/release-notes.txt
           fi
-          # 写入文件避免多行转义问题
-          echo "$COMMITS" > /tmp/release-notes.txt
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
